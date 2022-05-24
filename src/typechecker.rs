@@ -700,6 +700,7 @@ pub enum NumericConstant {
     U32(u32),
     U64(u64),
     USize(u64),
+    F32(f32),
 }
 
 impl PartialEq for NumericConstant {
@@ -731,6 +732,7 @@ impl NumericConstant {
             NumericConstant::U32(value) => Some(IntegerConstant::Unsigned(*value as u64)),
             NumericConstant::U64(value) => Some(IntegerConstant::Unsigned(*value as u64)),
             NumericConstant::USize(value) => Some(IntegerConstant::Unsigned(*value as u64)),
+            _ => None,
         }
     }
 
@@ -745,6 +747,8 @@ impl NumericConstant {
             NumericConstant::U32(_) => U32_TYPE_ID,
             NumericConstant::U64(_) => U64_TYPE_ID,
             NumericConstant::USize(_) => USIZE_TYPE_ID,
+            NumericConstant::F32(_) => F32_TYPE_ID
+
         }
     }
 }

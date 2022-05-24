@@ -2919,24 +2919,48 @@ pub fn parse_operand(tokens: &[Token], index: &mut usize) -> (ParsedExpression, 
                 }
             }
             TokenContents::Dot => {
+                let before_dot = if let TokenContents::Number(num) = &tokens[*index - 1].contents {
+                    Some(num)
+                } else {
+                    None
+                };
                 *index += 1;
 
                 if *index < tokens.len() {
                     match &tokens[*index].contents {
                         TokenContents::Number(constant) => {
                             *index += 1;
-
                             let span = Span {
                                 file_id: expr.span().file_id,
                                 start: expr.span().start,
                                 end: tokens[*index].span.end,
                             };
-
-                            expr = ParsedExpression::IndexedTuple(
-                                Box::new(expr),
-                                constant.integer_constant().unwrap().to_usize(),
-                                span,
-                            );
+                            if let Some(number) = before_dot {
+                                let first_num = if let NumericConstant::I64(num) = number {
+                                    Some(num)
+                                } else {
+                                    None
+                                };
+                                let second_num = if let NumericConstant::I64(num) = constant {
+                                    Some(num)
+                                } else {
+                                    None
+                                };
+                                let float =
+                                    format!("{}.{}", first_num.unwrap(), second_num.unwrap());
+                                let number_format =
+                                    float.parse::<f32>().expect("Failed to parse float");
+                                expr = ParsedExpression::NumericConstant(
+                                    NumericConstant::F32(number_format),
+                                    span,
+                                )
+                            } else {
+                                expr = ParsedExpression::IndexedTuple(
+                                    Box::new(expr),
+                                    constant.integer_constant().unwrap().to_usize(),
+                                    span,
+                                );
+                            }
                         }
 
                         TokenContents::Name(name) => {
@@ -3826,7 +3850,6 @@ pub fn parse_variable_declaration(
     match &tokens[*index].contents {
         TokenContents::Name(name) => {
             let var_name = name.to_string();
-
             *index += 1;
 
             if *index < tokens.len() {
@@ -4021,7 +4044,6 @@ pub fn parse_typename(tokens: &[Token], index: &mut usize) -> (ParsedType, Optio
     if shorthand_type != ParsedType::Empty {
         return (shorthand_type, error);
     }
-
     match &tokens[*index] {
         Token {
             contents: TokenContents::Name(name),
